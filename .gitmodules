@@ -1,0 +1,3 @@
+[submodule "spark-cluster-install"]
+	path = spark-cluster-install
+	url = https://github.com/lresende/spark-cluster-install.git
