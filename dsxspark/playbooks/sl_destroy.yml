@@ -6,7 +6,6 @@
     sl_vm:
       hostname: "{{ hostname }}"
       domain: "{{ domain }}"
-      datacenter: dal09
       tags: "dsx_spark_{{ cluster_name }}"
       cpus: "{{ cpus }}" 
       memory: "{{ memory }}"
@@ -14,3 +13,4 @@
       ssh_keys: "{{ ssh_keys }}"
       os_code: UBUNTU_LATEST
       wait: True
+      state: absent
