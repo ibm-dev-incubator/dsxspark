@@ -10,20 +10,41 @@ LAUNCH_PLAYBOOK = os.path.join(PLAYBOOK_PATH, 'sl_launch.yaml')
 DESTROY_PLAYBOOK = os.path.join(PLAYBOOK_PATH, 'sl_destroy.yaml')
 
 
-class SparkCluster(object):
-    def __init__(self, server_count, cluster_name, cpus=4, memory=16,
-                 disk_size=25, domain_name=None, ssh_keys=None):
+class SLSparkCluster(object):
+    def __init__(self, server_count, cluster_name, cpus=4, memory=16384,
+                 disk_size=25, domain_name='spark.test', datacenter='dal10',
+                 ssh_keys=None):
+        """Deploy a spark cluster on softlayer
+
+        :param str hostname: The base hostname to use for all nodes. Must not
+            contain any special characters, except for '.' and '-'.
+        :param str domain_name: The domain name to use for all clusters. Must
+            be in the form 'Domain.TLD' and no special characters can be used
+            except for '.' and '-'
+        :param int cpus: The number of cpus to use for the nodes
+        :param int memory: An integer representing the memory size in MB to
+            use for the launched VMs. Must be one of: 1024, 2048, 4096,
+            6144, 8192, 12288, 16384, 32768, 49152, 65536, 131072, 247808
+        :param str datacenter: A string for which data center to launch the
+            nodes in. Valid choices are ams01, ams03, che01, dal01, dal05,
+            dal06, dal09, dal10, fra02, hkg02, hou02, lon02, mel01, mex01,
+            mil01, mon01, osl01, par01, sjc01, sjc03, sao01, sea01, sng01,
+            syd01, tok02, tor01, wdc01, wdc04
+        :param list ssh_keys: A list of numeric ids for each ssh key to use
+            on the server.
+
+        """
         self.cluster_name = cluster_name
         self.server_count = server_count
+        ssh_keys = ssh_keys or []
         self.extra_vars = {
             'disk_size': disk_size,
             'memory': memory,
             'cpus': cpus,
-            'ssh_keys': ssh_keys,
+            'ssh_keys': ','.join(ssh_keys),
             "cluster_name": self.cluster_name,
+            "domain": domain_name
         }
-        if domain_name:
-            self.extra_vars['domain'] = domain_name
         self.inventory_file = os.path.join(tempfile.gettempdir(),
                                            'spark_inv.ini')
 
