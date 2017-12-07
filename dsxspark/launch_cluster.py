@@ -112,13 +112,13 @@ install_temp_dir=/tmp/ansible-install
 install_dir=/opt
 python_version=2
 """)
-        worker = threading.Thread(target=self._launch_worker, args=(1),
+        worker = threading.Thread(target=self._launch_worker, args=(1,),
                                   kwargs={'master': True})
         worker.start()
         self.launcher_treads.append(worker)
         for node in range(2, self.server_count + 1):
             worker_thread = threading.Thread(target=self._launch_worker,
-                                             args=(node))
+                                             args=(node,))
             worker_thread.start()
             self.launcher_treads.append(worker_thread)
         for worker in self.launcher_treads:
