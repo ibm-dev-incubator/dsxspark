@@ -5,5 +5,3 @@
   pre_tasks:
     - name: 'update yum stuff'
       raw: yum -y update
-    - name: 'install python2'
-      raw: yum -y install python-simplejson
