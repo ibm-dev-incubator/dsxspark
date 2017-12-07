@@ -3,7 +3,7 @@
   remote_user: root
   gather_facts: no
   pre_tasks:
-    - name: 'update apt-sources'
-      raw: apt-get update
+    - name: 'update yum stuff'
+      raw: yum -y update
     - name: 'install python2'
-      raw: apt-get -y install python-simplejson
+      raw: yum -y install python-simplejson

@@ -12,5 +12,5 @@
       memory: "{{ memory }}"
       disks: "[{{ disk_size }}]"
       ssh_keys: "[{{ ssh_keys }}]"
-      os_code: UBUNTU_LATEST
+      os_code: CENTOS_LATEST
       wait: True
