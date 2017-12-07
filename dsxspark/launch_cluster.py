@@ -6,8 +6,8 @@ from dsxspark import runner
 
 PLAYBOOK_PATH = os.path.join(
     os.path.abspath(os.path.dirname(__file__)), 'playbooks')
-LAUNCH_PLAYBOOK = os.path.join(PLAYBOOK_PATH, 'sl_launch.yaml')
-DESTROY_PLAYBOOK = os.path.join(PLAYBOOK_PATH, 'sl_destroy.yaml')
+LAUNCH_PLAYBOOK = os.path.join(PLAYBOOK_PATH, 'sl_launch.yml')
+DESTROY_PLAYBOOK = os.path.join(PLAYBOOK_PATH, 'sl_destroy.yml')
 
 
 class SLSparkCluster(object):
@@ -43,7 +43,8 @@ class SLSparkCluster(object):
             'cpus': cpus,
             'ssh_keys': ','.join(ssh_keys),
             "cluster_name": self.cluster_name,
-            "domain": domain_name
+            "domain": domain_name,
+            'datacenter': datacenter,
         }
         self.inventory_file = os.path.join(tempfile.gettempdir(),
                                            'spark_inv.ini')
