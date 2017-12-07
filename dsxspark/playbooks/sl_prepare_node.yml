@@ -1,0 +1,9 @@
+- name: Prepare nodes
+  hosts: all
+  remote_user: root
+  gather_facts: no
+  pre_tasks:
+    - name: 'update apt-sources'
+      raw: apt-get update
+    - name: 'install python2'
+      raw: apt-get -y install python-simplejson
