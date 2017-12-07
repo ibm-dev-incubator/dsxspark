@@ -58,6 +58,7 @@ class SLSparkCluster(object):
             tempfile.gettempdir(), 'spark_inv_%s.ini' % self.cluster_name)
         self.launcher_treads = []
         self.inventory_lock = threading.Lock()
+        self.deployed = False
 
     def _get_ip_addr(self, hostname):
         sl_client = sl.create_client_from_env()
@@ -95,6 +96,9 @@ class SLSparkCluster(object):
 """ % (hostname, ip_addr))
 
     def deploy_cluster(self):
+        if self.deployed:
+            print("This cluster is already deployed.")
+            return
         with open(self.inventory_file, 'a') as inv_file:
             inv_file.write("""[all:vars]
 ansible_connection=ssh
@@ -114,6 +118,7 @@ python_version=2
             self.launcher_treads.append(worker_thread)
         for worker in self.launcher_treads:
             worker.join()
+        self.deployed = True
         self.launcher_treads = []
         runner.run_playbook_subprocess(PREPARE_PLAYBOOK,
                                        inventory=self.inventory_file)
