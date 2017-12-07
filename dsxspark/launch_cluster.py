@@ -12,6 +12,7 @@ PLAYBOOK_PATH = os.path.join(
 LAUNCH_PLAYBOOK = os.path.join(PLAYBOOK_PATH, 'sl_launch.yml')
 DESTROY_PLAYBOOK = os.path.join(PLAYBOOK_PATH, 'sl_destroy.yml')
 PREPARE_PLAYBOOK = os.path.join(PLAYBOOK_PATH, 'sl_prepare_node.yml')
+START_SPARK_PLAYBOOK = os.path.join(PLAYBOOK_PATH, 'start_spark.yml')
 SPARK_DEPLOY_DIR = os.path.join(
     os.path.abspath(os.path.dirname(os.path.dirname(__file__))),
     'spark-cluster-install')
@@ -44,6 +45,7 @@ class SLSparkCluster(object):
         self.cluster_name = cluster_name
         self.server_count = server_count
         self.datacenter = datacenter
+        self.domain_name = domain_name
         ssh_keys = ssh_keys or []
         self.extra_vars = {
             'disk_size': disk_size,
@@ -51,7 +53,7 @@ class SLSparkCluster(object):
             'cpus': cpus,
             'ssh_keys': ','.join(ssh_keys),
             "cluster_name": self.cluster_name,
-            "domain": domain_name,
+            "domain": self.domain_name,
             'datacenter': self.datacenter,
         }
         self.inventory_file = os.path.join(
@@ -127,6 +129,8 @@ python_version=2
         runner.run_playbook_subprocess('./setup-spark-standalone.yml',
                                        inventory=self.inventory_file)
         os.chdir(cwd)
+        runner.run_playbook_subprocess(START_SPARK_PLAYBOOK,
+                                       extra_vars={'domain': self.domain})
 
     def _delete_worker(self, worker_number):
         hostname = self.cluster_name + '%02d' % worker_number

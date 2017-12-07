@@ -1,0 +1,50 @@
+- name: Setup env
+  hosts: all
+  gather_facts: False
+  remote_user: root
+  tasks:
+    - name: Add IP address of all hosts to all hosts
+      lineinfile:
+        dest: /etc/hosts
+        line: "{{ hostvars[item].ansible_host }} {{ hostvars[item].inventory_hostname }}.{{ domain }} {{ hostvars[item].inventory_hostname_short }}"
+        state: present
+      with_items: "{{ groups.all }}"
+
+
+- name: Setup SSH Keys master
+  hosts: master
+  gather_facts: False
+  remote_user: root
+  tasks:
+    - name: Generate SSH keys
+      shell: ssh-keygen -f /root/.ssh/id_rsa -N ""
+      args:
+        creates: /root/.ssh/id_rsa
+    - name: Downloading pub key
+      fetch: src=/root/.ssh/id_rsa.pub dest=/tmp/id_rsa.tmp flat=yes
+    - name: Setting up loopback auth
+      shell: cat /root/.ssh/id_rsa.pub >> /root/.ssh/authorized_keys
+
+- name: Setup ssh keys node
+  hosts: nodes
+  gather_facts: False
+  remote_user: root
+  tasks:
+    - name: Copy master key
+      copy:
+        src: /tmp/id_rsa.tmp
+        dest: /tmp/id_rsa.tmp
+
+    - name: Setting up master auth
+      shell: cat /tmp/id_rsa.tmp >> /root/.ssh/authorized_keys
+
+
+- name: Start Cluster
+  hosts: master
+  gather_facts: False
+  remote_user: root
+  tasks:
+      - name: Start Cluster
+        shell: /opt/bin/spark-cluster.sh --start
+
+
