@@ -1,6 +1,7 @@
 import copy
 import os
 import tempfile
+import threading
 
 import SoftLayer as sl
 
@@ -55,6 +56,8 @@ class SLSparkCluster(object):
         }
         self.inventory_file = os.path.join(
             tempfile.gettempdir(), 'spark_inv_%s.ini' % self.cluster_name)
+        self.launcher_treads = []
+        self.inventory_lock = threading.Lock()
 
     def _get_ip_addr(self, hostname):
         sl_client = sl.create_client_from_env()
@@ -74,15 +77,17 @@ class SLSparkCluster(object):
             self._write_node_inventory(hostname, ip_addr, worker_number)
 
     def _write_node_inventory(self, hostname, ip_addr, node_num):
-        with open(self.inventory_file, 'a') as inv_file:
-            inv_file.write(
-                "%s ansible_host=%s ansible_host_id=%s\n" % (
-                    hostname, ip_addr, node_num))
+        with self.inventory_lock:
+            with open(self.inventory_file, 'a') as inv_file:
+                inv_file.write(
+                    "%s ansible_host=%s ansible_host_id=%s\n" % (
+                        hostname, ip_addr, node_num))
 
     def _write_master_inventory(self, hostname, ip_addr):
-        self.master_ip = ip_addr
-        with open(self.inventory_file, 'a') as inv_file:
-            inv_file.write("""
+        with self.inventory_lock:
+            self.master_ip = ip_addr
+            with open(self.inventory_file, 'a') as inv_file:
+                inv_file.write("""
 [master]
 %s ansible_host=%s ansible_host_id=1
 
@@ -101,9 +106,15 @@ install_temp_dir=/tmp/ansible-install
 install_dir=/opt
 python_version=2
 """)
-        self._launch_worker(1, master=True)
+        worker = threading.Thread(target=self._launch_worker, args=(1),
+                                  kwargs={'master': True})
         for node in range(2, self.server_count + 1):
-            self._launch_worker(node)
+            worker_thread = threading.Thread(target=self._launch_worker,
+                                             args=(node))
+            self.launcher_treads.append(worker_thread)
+        for worker in self.launcher_treads:
+            worker.join()
+        self.launcher_treads = []
         runner.run_playbook_subprocess(PREPARE_PLAYBOOK,
                                        inventory=self.inventory_file)
         cwd = os.getcwd()
