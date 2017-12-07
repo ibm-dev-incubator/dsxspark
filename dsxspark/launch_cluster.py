@@ -133,7 +133,7 @@ python_version=2
                                        inventory=self.inventory_file)
         os.chdir(cwd)
         runner.run_playbook_subprocess(START_SPARK_PLAYBOOK,
-                                       extra_vars={'domain': self.domain})
+                                       extra_vars={'domain': self.domain_name})
 
     def _delete_worker(self, worker_number):
         hostname = self.cluster_name + '%02d' % worker_number
