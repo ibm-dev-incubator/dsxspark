@@ -80,7 +80,7 @@ class SLSparkCluster(object):
         with open(self.inventory_file, 'a') as inv_file:
             inv_file.write("""
 [master]
-%s ansible_host %s ansible_host_id=1
+%s ansible_host=%s ansible_host_id=1
 
 [nodes]
 """ % (hostname, ip_addr))
