@@ -9,7 +9,16 @@
         line: "{{ hostvars[item].ansible_host }} {{ hostvars[item].inventory_hostname }}.{{ domain }} {{ hostvars[item].inventory_hostname_short }}"
         state: present
       with_items: "{{ groups.all }}"
-
+    - name: remove loopback refence from hosts file
+      lineinfile:
+        dest: /etc/hosts
+        line: "127.0.0.1 {{ hostvars[item].inventory_hostname }}.{{ domain }} {{ hostvars[item].inventory_hostname_short }}"
+        state: absent
+    - name: remove loopback refence from hosts file
+      lineinfile:
+        dest: /etc/hosts
+        line: "::1 {{ hostvars[item].inventory_hostname }}.{{ domain }} {{ hostvars[item].inventory_hostname_short }}"
+        state: absent
 
 - name: Setup SSH Keys master
   hosts: master
