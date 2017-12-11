@@ -27,8 +27,7 @@ DESTROY_PLAYBOOK = os.path.join(PLAYBOOK_PATH, 'sl_destroy.yml')
 PREPARE_PLAYBOOK = os.path.join(PLAYBOOK_PATH, 'sl_prepare_node.yml')
 START_SPARK_PLAYBOOK = os.path.join(PLAYBOOK_PATH, 'start_spark.yml')
 SPARK_DEPLOY_DIR = os.path.join(
-    os.path.abspath(os.path.dirname(os.path.dirname(__file__))),
-    'spark-cluster-install')
+    os.path.abspath(os.path.dirname(__file__)), 'spark-cluster-install')
 
 
 class SLSparkCluster(object):
