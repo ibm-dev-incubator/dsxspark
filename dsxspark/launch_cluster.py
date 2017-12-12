@@ -12,11 +12,16 @@
 
 import copy
 import os
+import socket
 import tempfile
+import time
 import threading
 
+import paramiko
 import SoftLayer as sl
+import shade
 
+from dsxspark import exceptions
 from dsxspark import runner
 from dsxspark import write_inventory
 
@@ -25,6 +30,8 @@ PLAYBOOK_PATH = os.path.join(
 LAUNCH_PLAYBOOK = os.path.join(PLAYBOOK_PATH, 'sl_launch.yml')
 DESTROY_PLAYBOOK = os.path.join(PLAYBOOK_PATH, 'sl_destroy.yml')
 PREPARE_PLAYBOOK = os.path.join(PLAYBOOK_PATH, 'sl_prepare_node.yml')
+SETUP_SPARK_PLAYBOOK = os.path.join(PLAYBOOK_PATH,
+                                    'setup-spark-standalone.yml')
 START_SPARK_PLAYBOOK = os.path.join(PLAYBOOK_PATH, 'start_spark.yml')
 SPARK_DEPLOY_DIR = os.path.join(
     os.path.abspath(os.path.dirname(__file__)), 'spark-cluster-install')
@@ -139,3 +146,116 @@ class SLSparkCluster(object):
     def collapse_cluster(self):
         for node in range(self.server_count + 1):
             self._delete_worker(node)
+
+
+class OSSparkCluster(object):
+    def __init__(self, server_count, cluster_name, flavor, image,
+                 ssh_key=None, cloud_name=None, remote_user='centos'):
+        """Deploy a spark cluster on an OpenStack cloud
+
+        :param int server_count: The number of servers to use in the cluster
+        :param str cluster_name:
+        :param flavor: The flavor to use for the servers. It can either be the
+            name or the id. This will be used for all servers in the cluster
+        :param image: The image to use for the servers. It can either be the
+            name or the id. This will be used for all servers in the cluster.
+            This should be a CentOS or RHEL image, this is what the ansible
+            playbooks for deploying spark expect.
+        :param str ssh_key: The ssh key name to use for the server.
+        :param str cloud_name: An optional cloud name used to specify which
+            cloud to use if multiple are present in your cloud config.
+        :param str remote_user: The username to use for ssh
+        """
+
+
+        self.cluster_name = cluster_name
+        self.server_count = server_count
+        self.image = image
+        self.flavor = flavor
+        self.ssh_key = ssh_key
+        self.cloud = shade.openstack_cloud(cloud=cloud_name)
+        self.remote_user = remote_user
+        self.servers = []
+        self.inventory_file = os.path.join(
+            tempfile.gettempdir(), 'spark_inv_%s.ini' % self.cluster_name)
+        self.launcher_treads = []
+        self.deployed = False
+        self.master = {}
+        self.nodes = []
+
+    def _check_ssh(self, ip_addr):
+        client = paramiko.SSHClient()
+        client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+        count = 0
+        sleep_time = 5
+        while count < 3:
+            try:
+                client.connect(ip_addr, username=self.remote_user)
+                return
+            except (EOFError, socket.error, socket.timeout,
+                    paramiko.SSHException):
+                client.close()
+                time.sleep(sleep_time)
+                sleep_time = sleep_time * sleep_time
+            count = count + 1
+        raise exceptions.SSHTimeOut('SSH never became available')
+
+    def _launch_worker(self, worker_number, master=None):
+        hostname = self.cluster_name + '%02d' % worker_number
+        server = self.cloud.create_server(hostname, image=self.image,
+                                          flavor=self.flavor,
+                                          key_name=self.ssh_key,
+                                          wait=True)
+        self.servers.append(server)
+        if server['interface_ip']:
+            ip_addr = server['interface_ip']
+        else:
+            ip_addr = shade.meta.get_server_ip(server)
+        if master:
+            self._write_master_inventory(hostname, ip_addr)
+        else:
+            self._write_node_inventory(hostname, ip_addr, worker_number)
+        self._check_ssh(ip_addr)
+
+    def deploy_cluster(self):
+        if self.deployed:
+            print("This cluster is already deployed.")
+            return
+        worker = threading.Thread(target=self._launch_worker, args=(1,),
+                                  kwargs={'master': True})
+        worker.start()
+        self.launcher_treads.append(worker)
+        for node in range(2, self.server_count + 1):
+            worker_thread = threading.Thread(target=self._launch_worker,
+                                             args=(node,))
+            worker_thread.start()
+            self.launcher_treads.append(worker_thread)
+        for worker in self.launcher_treads:
+            worker.join()
+        self.deployed = True
+        with open(self.inventory_file, 'w') as inv_file:
+            write_inventory.write_inventory(inv_file, self.master, self.nodes,
+                                            remote_user=self.remote_user)
+        self.launcher_treads = []
+        runner.run_playbook_subprocess(PREPARE_PLAYBOOK,
+                                       inventory=self.inventory_file)
+        cwd = os.getcwd()
+        os.chdir(SPARK_DEPLOY_DIR)
+        runner.run_playbook_subprocess(SETUP_SPARK_PLAYBOOK,
+                                       inventory=self.inventory_file)
+        os.chdir(cwd)
+        runner.run_playbook_subprocess(START_SPARK_PLAYBOOK,
+                                       extra_vars={'domain': ''},
+                                       inventory=self.inventory_file)
+
+    def _write_node_inventory(self, hostname, ip_addr, node_num):
+        self.nodes.append({'hostname': hostname, 'ip_addr': ip_addr,
+                           'node_num': node_num})
+
+    def _write_master_inventory(self, hostname, ip_addr):
+        self.master = {'hostname': hostname, 'ip_addr': ip_addr}
+        self.master_ip = ip_addr
+
+    def collapse_cluster(self):
+        for server in self.servers:
+            self.cloud.delete_server(server['id'])

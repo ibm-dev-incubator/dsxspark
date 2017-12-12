@@ -7,3 +7,5 @@ six>=1.9.0 # MIT
 voluptuous>=0.8.9 # BSD License
 ansible>=2.3.0.0 # GPLv3
 softlayer>=5.3.0 # MIT
+shade>=1.25.0 # Apache-2.0
+paramiko>=2.0.0 # LGPLv2.1+

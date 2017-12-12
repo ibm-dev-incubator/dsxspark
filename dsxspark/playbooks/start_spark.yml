@@ -1,7 +1,6 @@
 - name: Setup env
   hosts: all
   gather_facts: False
-  remote_user: root
   tasks:
     - name: Add IP address of all hosts to all hosts
       lineinfile:
@@ -25,7 +24,6 @@
 - name: Setup SSH Keys master
   hosts: master
   gather_facts: False
-  remote_user: root
   tasks:
     - name: Generate SSH keys
       shell: ssh-keygen -f /root/.ssh/id_rsa -N ""
@@ -39,7 +37,6 @@
 - name: Setup ssh keys node
   hosts: nodes
   gather_facts: False
-  remote_user: root
   tasks:
     - name: Copy master key
       copy:
@@ -53,7 +50,6 @@
 - name: Start Cluster
   hosts: master
   gather_facts: False
-  remote_user: root
   tasks:
       - name: Start Cluster
         shell: /opt/bin/spark-cluster.sh --start

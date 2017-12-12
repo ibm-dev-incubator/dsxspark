@@ -1,7 +1,6 @@
 - name: Prepare nodes
   hosts: all
-  remote_user: root
   gather_facts: no
   pre_tasks:
     - name: 'update yum stuff'
-      raw: yum -y update
+      raw: sudo yum -y update

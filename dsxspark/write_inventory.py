@@ -11,7 +11,7 @@
 # under the License.
 
 
-def write_inventory(output_file, master, nodes):
+def write_inventory(output_file, master, nodes, remote_user='root'):
     output_file.write("""[all:vars]
 ansible_connection=ssh
 gather_facts=True
@@ -24,10 +24,12 @@ python_version=2
 """)
     output_file.write("""
 [master]
-%s ansible_host=%s ansible_host_id=1
+%s ansible_host=%s ansible_host_id=1 ansible_user=%s
 
 [nodes]
-""" % (master['hostname'], master['ip_addr']))
+""" % (master['hostname'], master['ip_addr'], remote_user))
     for node in nodes:
-        output_file.write("%s ansible_host=%s ansible_host_id=%s\n" % (
-            node['hostname'], node['ip_addr'], node['node_num']))
+        output_file.write(
+            "%s ansible_host=%s ansible_host_id=%s ansible_user=%s\n" % (
+                node['hostname'], node['ip_addr'], node['node_num'],
+                remote_user))

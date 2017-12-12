@@ -21,3 +21,6 @@ class InstanceCreateException(BaseException):
 
 class PlaybookFailure(BaseException):
     pass
+
+class SSHTimeOut(BaseException):
+    pass
