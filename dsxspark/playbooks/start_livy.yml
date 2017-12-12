@@ -1,0 +1,18 @@
+- name: Download and install livy
+  hosts: master
+  gather_facts: False
+  remote_user: root
+  tasks:
+    - name: Download livy
+      get_url:
+        url: http://apache.spinellicreations.com/incubator/livy/0.4.0-incubating/livy-0.4.0-incubating-bin.zip
+          checksum: md5:0818685b9bc196de2bef9f0dd0e008b3
+          dest: /tmp/livy-0.4.0-incubating-bin.zip
+    - name: Ensure unzip is installed
+      yum:
+        name: unzip
+        state: present
+    - name: Extract package
+      shell: unzip /tmp/livy-0.4.0-incubating-bin.zip -d /opt
+    - name: Start Livy server
+      shell: SPARK_HOME=/opt/spark-2.2.0-bin-hadoop2.7 /opt/livy-0.4.0-incubating-bin/bin/livy-server start  
