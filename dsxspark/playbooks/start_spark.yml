@@ -1,6 +1,8 @@
 - name: Setup env
   hosts: all
   gather_facts: False
+  become: True
+  become_method: sudo
   tasks:
     - name: Add IP address of all hosts to all hosts
       lineinfile:

@@ -239,11 +239,8 @@ class OSSparkCluster(object):
         self.launcher_treads = []
         runner.run_playbook_subprocess(PREPARE_PLAYBOOK,
                                        inventory=self.inventory_file)
-        cwd = os.getcwd()
-        os.chdir(SPARK_DEPLOY_DIR)
         runner.run_playbook_subprocess(SETUP_SPARK_PLAYBOOK,
                                        inventory=self.inventory_file)
-        os.chdir(cwd)
         runner.run_playbook_subprocess(START_SPARK_PLAYBOOK,
                                        extra_vars={'domain': ''},
                                        inventory=self.inventory_file)

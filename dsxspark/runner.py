@@ -31,6 +31,7 @@ def run_playbook_subprocess(playbook, extra_vars=None, inventory=None):
             extra_vars_string += "%s='%s' " % (var, extra_vars[var])
         extra_vars_string = extra_vars_string.rstrip()
         cmd.extend(['--extra-vars', extra_vars_string])
+    cmd.extend(['--timeout', '25'])
     proc = subprocess.Popen(cmd, stdout=subprocess.PIPE,
                             stderr=subprocess.PIPE)
     stdout, stderr = proc.communicate()
