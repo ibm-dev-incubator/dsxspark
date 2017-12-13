@@ -1,0 +1,11 @@
+- name: spark setup
+  become: True
+  become_method: sudo
+  hosts: all
+  roles:
+    - role: common
+    - role: zookeeper
+    - role: kafka
+    - role: hdfs
+    - role: spark
+    - role: spark-cluster-admin
